@@ -55,3 +55,100 @@ module.exports.getCards = (json) =>{
 '\n' +
 '\n' +
 'where t1.go_id=t2.go_id AND t1.go_id = government.go_id ORDER BY result_weight DESC')}
+module.exports.getClientRequirements = 'SELECT * FROM clients_req'
+module.exports.getClientParams = 'SELECT params.par_name,answers.ans_name,answers.ans_id FROM params,answers,ans_par where params.par_id = ans_par.par_id AND answers.ans_id = ans_par.ans_id'
+module.exports.getGovs = 'select * from governments'
+module.exports.getMaxWeight = 'SELECT t1.gov_id,SUM(t1.oweight) as max_weight FROM (select governments.* ,COUNT(params.par_id)*2 as oweight from governments,params GROUP BY governments.gov_id UNION  ALL select governments.*,SUM(cli_gov_req.cli_gov_weight) as weight from governments,clients_req,cli_gov_req where governments.gov_id=cli_gov_req.gov_id and clients_req.cli_id = cli_gov_req.cli_id  GROUP BY governments.gov_id ) t1 GROUP BY t1.gov_name,t1.gov_id,t1.gov_desc,t1.gov_date_start,t1.gov_date_end,t1.gov_credit_time,t1.gov_pool_form,t1.gov_owner,t1.gov_max_sum,t1.gov_percent,t1.govs_sum'
+module.exports.getGovsByReqs = (params,req) =>{
+    
+    const check_params=()=>{
+        if(params){
+        var query1 = ""
+       
+        for (var i=0;i<params.length;i++){
+         if(i){
+            
+                 query1 = query1 + " OR ans_govs.ans_id = "+ params[i]+" "
+         }
+         else{
+         
+         query1 = query1 + "and (ans_govs.ans_id = " + params[i]+" ";}
+         
+        }
+     }
+     query1 = query1 + ")"
+     return query1
+    }
+    
+    const check_req=()=>{
+        console.log(req[0])
+        if(req[0]){
+            
+        var query2 = ""
+        var key = 0;
+        for (var i=0;i<req.length;i++){
+ 
+         if(i){
+                key++;
+                 query2 = query2 + " OR cli_gov_req.cli_id= " + req[i]+" "
+         }
+         else{
+            key++;
+         query2 = query2 + "and (cli_gov_req.cli_id= " + req[i]+" ";
+         }
+     }
+     
+     if (key) query2 = query2 + " )"
+     return query2
+    }
+    else 
+    return " and cli_gov_req.cli_id=NULL "
+
+}
+    return ( 'SELECT t1.gov_name,t1.gov_id,t1.gov_desc,t1.gov_date_start,t1.gov_date_end,t1.gov_credit_time,t1.gov_pool_form,t1.gov_owner,t1.gov_max_sum,t1.gov_percent,t1.govs_sum,SUM(t1.weight) as choose_weight FROM(\n'+
+        'select governments.*,SUM(ans_govs.govs_ans_weight) as weight\n'+
+        'FROM governments,answers,ans_govs\n'+
+        'where governments.gov_id = ans_govs.gov_id and ans_govs.ans_id = answers.ans_id\n'+ check_params() +
+        'GROUP BY governments.gov_id\n'+
+        'UNION\n'+ 
+        'select governments.*,SUM(cli_gov_req.cli_gov_weight) as weight from governments,clients_req,cli_gov_req\n'+
+        'where governments.gov_id=cli_gov_req.gov_id and clients_req.cli_id = cli_gov_req.cli_id \n'+check_req() +
+        'GROUP BY governments.gov_id) t1\n'+ 
+        'GROUP BY t1.gov_name,t1.gov_id,t1.gov_desc,t1.gov_date_start,t1.gov_date_end,t1.gov_credit_time,t1.gov_pool_form,t1.gov_owner,t1.gov_max_sum,t1.gov_percent,t1.govs_sum\n'+
+        'ORDER BY choose_weight DESC'
+    )
+        
+}
+
+module.exports.getCardPageRequire = (id,selected) =>{
+
+
+    const check=()=>{
+        let key = 0;
+        let query = ""
+        for (var i=0;i<selected.length;i++){
+ 
+         if(i){
+ key++;
+                 query = query + " and clients_req.cli_id != " + selected[i]+ ' ' ;
+ 
+ 
+         }
+         else
+         query = query + "and (clients_req.cli_id != " + selected[i] ;
+ 
+     }
+     return query +')'
+    }
+
+    return ('select clients_req.cli_desc,clients_req.cli_id from governments,cli_gov_req,clients_req \n'+
+       ' where governments.gov_id = cli_gov_req.gov_id and clients_req.cli_id = cli_gov_req.cli_id and clients_req NOTNULL \n'+ check() +
+        'and cli_gov_req.gov_id = '+id)
+}
+
+module.exports.getCardPageDeals = (id) =>{
+    return ('select deal_req.* from deal_req,deal_gov,governments \n'+
+       ' where governments.gov_id = deal_gov.gov_id and deal_gov.deal_id = deal_req.deal_id \n'+ 
+        'and governments.gov_id = '+id)
+}
+module.exports.getGovs = 'select  *  from governments'
