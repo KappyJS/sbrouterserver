@@ -5,7 +5,7 @@ const client = new Client({
     database: 'd6kqrlrip5n24n',
     password: '701568d08b10dcf8daded3e9b6a639fcb096b302dd90324722ad9666edaaaf79',
     port: 5432,
-    ssl:true
+    ssl:true 
 })
 
 client.connect((err) => {
